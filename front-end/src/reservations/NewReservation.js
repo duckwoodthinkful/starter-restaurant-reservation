@@ -1,59 +1,85 @@
 import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
-import { today } from "../utils/date-time";
+// import { today } from "../utils/date-time";
 import { createReservation } from "../utils/api";
 import ErrorAlert from "../layout/ErrorAlert";
 
-
-function NewReservation() 
-{
+function NewReservation() {
   const history = useHistory();
 
-    // const boundPeople = (value, min, max) => {
-    //     value = Math.max(Number(min), Math.min(Number(max), Number(value)));
-    
-    //     return value;
-    // }
+  // const boundPeople = (value, min, max) => {
+  //     value = Math.max(Number(min), Math.min(Number(max), Number(value)));
 
+  //     return value;
+  // }
 
-    const [reservation, setReservation] = useState({
-      first_name: "",
-      last_name: "",
-      mobile_number: "",
-      reservation_date: today,
-      reservation_time: "",
-      people: 1
-    });
+  const [reservation, setReservation] = useState({
+    first_name: "",
+    last_name: "",
+    mobile_number: "",
+    reservation_date: new Date().toISOString().slice(0,10),
+    reservation_time: "",
+    people: 1,
+  });
 
-    function changeHandler({ target: { name, value } }) {
-      setReservation((previousReservation) => ({
-        ...previousReservation,
-        [name]: value,
-      }));
+  function changeHandler({ target: { name, value } }) {
+    setReservation((previousReservation) => ({
+      ...previousReservation,
+      [name]: value,
+    }));
+  }
+
+  function validateForm() {
+    const aDay = new Date(reservation.reservation_date+" "+reservation.reservation_time);
+    console.log("aDay=", aDay)
+    const dayWeek = aDay.getDay();
+    console.log("dayWeek=", dayWeek);
+    let message = "";
+    if ((Date.parse(aDay) - Date.now()) < 0)
+    {
+      message += "\nReservation must be in the future.";
     }
-  
 
-    const [error, setError] = useState(null);
+    if (dayWeek === 2) {
+      message += "\nRestaurant is closed on Tuesdays.";
+    }
 
-    function handleSubmit(event) {
-      event.preventDefault();
+    if (message !== "")
+    {
+      setError({message: message});
+      return false;
+    }
+
+    return true;
+  }
+
+  const [error, setError] = useState(null);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    // Clear any previous errors
+    setError(null);
+    if (validateForm()) {
       createReservation(reservation)
         .then(() => {
           history.push("/");
         })
         .catch(setError);
+    } else {
+      return;
     }
-  
-      function CancelButton() {
-        const history = useHistory();
-        return (
-          <button type="button" onClick={() => history.goBack()}>
-            Cancel
-          </button>
-        );
-      }
+  }
+
+  function CancelButton() {
+    const history = useHistory();
     return (
-      <main>
+      <button type="button" onClick={() => history.goBack()}>
+        Cancel
+      </button>
+    );
+  }
+  return (
+    <main>
       <ErrorAlert error={error} />
       <form onSubmit={handleSubmit}>
         <label htmlFor="first_name">
@@ -75,7 +101,7 @@ function NewReservation()
             onChange={changeHandler}
             value={reservation.last_name}
           />
-        </label>        
+        </label>
         <label htmlFor="mobile_number">
           Mobile Number:
           <input
@@ -85,7 +111,7 @@ function NewReservation()
             onChange={changeHandler}
             value={reservation.mobile_number}
           />
-        </label>        
+        </label>
         <label htmlFor="reservation_date">
           Date of Reservation:
           <input
@@ -107,24 +133,21 @@ function NewReservation()
           />
         </label>
         <label htmlFor="people">
-          Number of People in Party: 
-          <input 
-            id="people" 
-            type="number" 
+          Number of People in Party:
+          <input
+            id="people"
+            type="number"
             min="1"
             name="people"
             onChange={changeHandler}
             value={reservation.people}
-
-             />
-        </label>        
+          />
+        </label>
         <button type="submit">Submit</button>
         <CancelButton />
       </form>
-      </main>
-    );
+    </main>
+  );
 }
 
 export default NewReservation;
-
-

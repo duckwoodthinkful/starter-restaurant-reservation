@@ -15,6 +15,7 @@ function checkDate(date) {
   var minYear = 1902;
   var maxYear = 2100;
 
+  // empty string means no error
   var errorMsg = "";
 
   // regular expression to match required date format
@@ -42,12 +43,7 @@ function checkDate(date) {
     errorMsg = "Empty date not allowed!";
   }
 
-  if (errorMsg != "") {
-    // console.log(errorMsg);
-    return false;
-  }
-
-  return true;
+  return errorMsg;
 }
 
 // Original JavaScript code by Chirp Internet: chirpinternet.eu
@@ -80,11 +76,23 @@ function checkTime(time) {
     }
   }
 
-  if (errorMsg != "") {
-    return false;
+  return errorMsg;
+}
+
+function checkDayOfWeek(date, time) {
+  const aDay = new Date(date + " " + time);
+  // console.log("aDay=", aDay)
+  const dayWeek = aDay.getDay();
+  // console.log("dayWeek=", dayWeek);
+  let message = "";
+  if (Date.parse(aDay) - Date.now() < 0) {
+    message += "\nReservation must be in the future.";
   }
 
-  return true;
+  if (dayWeek === 2) {
+    message += "\nRestaurant is closed on Tuesdays.";
+  }
+  return message;
 }
 
 function hasData(req, res, next) {
@@ -112,26 +120,40 @@ function hasLastName(req, res, next) {
 
 function hasReservationDate(req, res, next) {
   const reservation_date = req.body.data.reservation_date;
+  let message = "reservation_date is required";
   if (reservation_date) {
     // console.log("rd=", reservation_date);
     // console.log("check=", checkDate(reservation_date));
-    if (checkDate(reservation_date)) {
+    message = checkDate(reservation_date);
+    if (message === "") {
       return next();
     }
   }
-  next({ status: 400, message: "reservation_date is required" });
+  next({ status: 400, message: message });
 }
 
 function hasReservationTime(req, res, next) {
   const reservation_time = req.body.data.reservation_time;
+  let message = "reservation_time is required";
   if (reservation_time) {
     // console.log("rt=", reservation_time);
     // console.log("checkt=", checkDate(reservation_time));
-    if (checkTime(reservation_time)) {
+    message = checkTime(reservation_time);
+    if (message === "") {
       return next();
     }
   }
-  next({ status: 400, message: "reservation_time is required" });
+  next({ status: 400, message: message });
+}
+
+function validReservationDate(req, res, next) {
+  const reservation_date = req.body.data.reservation_date;
+  const reservation_time = req.body.data.reservation_time;
+  let message = checkDayOfWeek(reservation_date, reservation_time);
+  if (message == "") {
+    return next();
+  }
+  next({ status: 400, message: message });
 }
 
 function isNumeric(value) {
@@ -194,6 +216,7 @@ module.exports = {
     hasLastName,
     hasReservationDate,
     hasReservationTime,
+    validReservationDate,
     hasPeople,
     hasMobileNumber,
     asyncErrorBoundary(create),
