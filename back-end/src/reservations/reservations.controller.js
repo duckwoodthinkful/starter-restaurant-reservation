@@ -95,6 +95,22 @@ function checkDayOfWeek(date, time) {
   return message;
 }
 
+function checkReservationTime(date, time) {
+  const aReservationDay = new Date(date + " " + time);
+  // console.log("aReservationDay=", aReservationDay)
+  let message = "";
+  var startBusinessHours = new Date();
+  startBusinessHours.setHours(10,30,0); // 10:30 am is when restaraunt opens
+  var endBusinessHours = new Date();
+  endBusinessHours.setHours(21,30,0); // 9:30 pm latest reservation
+  
+  if(!(aReservationDay >= startBusinessHours && aReservationDay < endBusinessHours )){
+    message += "\nReservation must be between 10:30 am and 9:30 pm."
+  }
+
+  return message;
+}
+
 function hasData(req, res, next) {
   if (req.body.data) {
     return next();
@@ -150,6 +166,16 @@ function validReservationDate(req, res, next) {
   const reservation_date = req.body.data.reservation_date;
   const reservation_time = req.body.data.reservation_time;
   let message = checkDayOfWeek(reservation_date, reservation_time);
+  if (message == "") {
+    return next();
+  }
+  next({ status: 400, message: message });
+}
+
+function validReservationTime(req, res, next) {
+  const reservation_date = req.body.data.reservation_date;
+  const reservation_time = req.body.data.reservation_time;
+  let message = checkReservationTime(reservation_date, reservation_time);
   if (message == "") {
     return next();
   }
@@ -217,6 +243,7 @@ module.exports = {
     hasReservationDate,
     hasReservationTime,
     validReservationDate,
+    validReservationTime,
     hasPeople,
     hasMobileNumber,
     asyncErrorBoundary(create),

@@ -30,18 +30,27 @@ function NewReservation() {
   }
 
   function validateForm() {
-    const aDay = new Date(reservation.reservation_date+" "+reservation.reservation_time);
-    console.log("aDay=", aDay)
-    const dayWeek = aDay.getDay();
-    console.log("dayWeek=", dayWeek);
+    const aReservationDay = new Date(reservation.reservation_date+" "+reservation.reservation_time);
+    // console.log("aReservationDay=", aReservationDay)
+    const dayWeek = aReservationDay.getDay();
+    // console.log("dayWeek=", dayWeek);
     let message = "";
-    if ((Date.parse(aDay) - Date.now()) < 0)
+    if ((Date.parse(aReservationDay) - Date.now()) < 0)
     {
       message += "\nReservation must be in the future.";
     }
 
     if (dayWeek === 2) {
       message += "\nRestaurant is closed on Tuesdays.";
+    }
+
+    var startBusinessHours = new Date();
+    startBusinessHours.setHours(10,30,0); // 10:30 am is when restaraunt opens
+    var endBusinessHours = new Date();
+    endBusinessHours.setHours(21,30,0); // 9:30 pm latest reservation
+    
+    if(!(aReservationDay >= startBusinessHours && aReservationDay < endBusinessHours )){
+      message += "\nReservation must be between 10:30 am and 9:30 pm."
     }
 
     if (message !== "")
