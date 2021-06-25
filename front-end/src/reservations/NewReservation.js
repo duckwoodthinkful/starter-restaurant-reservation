@@ -22,7 +22,8 @@ function NewReservation() {
     people: 1,
   });
 
-  function changeHandler({ target: { name, value } }) {
+  function changeHandler({ target: { name, value, type } }) {
+    if (type === "number" )  value = Number(value);
     setReservation((previousReservation) => ({
       ...previousReservation,
       [name]: value,
@@ -44,10 +45,13 @@ function NewReservation() {
       message += "\nRestaurant is closed on Tuesdays.";
     }
 
-    var startBusinessHours = new Date();
+    var startBusinessHours = new Date(reservation.reservation_date+" "+reservation.reservation_time);
     startBusinessHours.setHours(10,30,0); // 10:30 am is when restaraunt opens
-    var endBusinessHours = new Date();
+    console.log("startH=", startBusinessHours);
+    var endBusinessHours = new Date(reservation.reservation_date+" "+reservation.reservation_time);
     endBusinessHours.setHours(21,30,0); // 9:30 pm latest reservation
+    console.log("endH=", endBusinessHours);
+    console.log(aReservationDay);
     
     if(!(aReservationDay >= startBusinessHours && aReservationDay < endBusinessHours )){
       message += "\nReservation must be between 10:30 am and 9:30 pm."
@@ -71,7 +75,8 @@ function NewReservation() {
     if (validateForm()) {
       createReservation(reservation)
         .then(() => {
-          history.push("/");
+          console.log ("pushing history - ", reservation.reservation_date);
+          history.push("/dashboard/?date="+reservation.reservation_date);
         })
         .catch(setError);
     } else {

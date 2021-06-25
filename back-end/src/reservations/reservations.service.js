@@ -6,7 +6,7 @@ function list() {
 
 function read(reservation_date) {
   // your solution here
-  console.log("Reading reservations", reservation_date);
+  // console.log("Reading reservations", reservation_date);
   return knex("reservations")
   .select("*")
   .where({reservation_date: reservation_date})

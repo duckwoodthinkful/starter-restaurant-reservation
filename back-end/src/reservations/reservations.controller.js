@@ -24,12 +24,12 @@ function checkDate(date) {
   if (date != "") {
     if ((regs = date.match(re))) {
       if (regs[3] < 1 || regs[3] > 31) {
-        errorMsg = "Invalid value for day: " + regs[3];
+        errorMsg = "reservation_date - Invalid value for day: " + regs[3];
       } else if (regs[2] < 1 || regs[2] > 12) {
-        errorMsg = "Invalid value for month: " + regs[2];
+        errorMsg = "reservation_date - Invalid value for month: " + regs[2];
       } else if (regs[1] < minYear || regs[1] > maxYear) {
         errorMsg =
-          "Invalid value for year: " +
+          "reservation_date -Invalid value for year: " +
           regs[1] +
           " - must be between " +
           minYear +
@@ -37,10 +37,10 @@ function checkDate(date) {
           maxYear;
       }
     } else {
-      errorMsg = "Invalid date format: " + date;
+      errorMsg = "reservation_date - Invalid date format: " + date;
     }
   } else if (!allowBlank) {
-    errorMsg = "Empty date not allowed!";
+    errorMsg = "reservation_date - Empty date not allowed!";
   }
 
   return errorMsg;
@@ -60,19 +60,19 @@ function checkTime(time) {
       if (regs[4]) {
         // 12-hour time format with am/pm
         if (regs[1] < 1 || regs[1] > 12) {
-          errorMsg = "Invalid value for hours: " + regs[1];
+          errorMsg = "reservation_time - Invalid value for hours: " + regs[1];
         }
       } else {
         // 24-hour time format
         if (regs[1] > 23) {
-          errorMsg = "Invalid value for hours: " + regs[1];
+          errorMsg = "reservation_time - Invalid value for hours: " + regs[1];
         }
       }
       if (!errorMsg && regs[2] > 59) {
-        errorMsg = "Invalid value for minutes: " + regs[2];
+        errorMsg = "reservation_time - Invalid value for minutes: " + regs[2];
       }
     } else {
-      errorMsg = "Invalid time format: " + time;
+      errorMsg = "Invalid reservation_time: " + time;
     }
   }
 
@@ -97,11 +97,11 @@ function checkDayOfWeek(date, time) {
 
 function checkReservationTime(date, time) {
   const aReservationDay = new Date(date + " " + time);
-  // console.log("aReservationDay=", aReservationDay)
+  console.log("aReservationTime=", aReservationDay)
   let message = "";
-  var startBusinessHours = new Date();
+  var startBusinessHours = new Date(date + " " + time);
   startBusinessHours.setHours(10,30,0); // 10:30 am is when restaraunt opens
-  var endBusinessHours = new Date();
+  var endBusinessHours = new Date(date + " " + time);
   endBusinessHours.setHours(21,30,0); // 9:30 pm latest reservation
   
   if(!(aReservationDay >= startBusinessHours && aReservationDay < endBusinessHours )){
@@ -188,6 +188,8 @@ function isNumeric(value) {
 
 function hasPeople(req, res, next) {
   const people = req.body.data.people;
+  console.log("people = ", people);
+  console.log("typeofpeople=", typeof people);
   if (typeof people == "number") {
     if (people >= 1) {
       // console.log("returning true=", people);
@@ -242,10 +244,10 @@ module.exports = {
     hasLastName,
     hasReservationDate,
     hasReservationTime,
-    validReservationDate,
-    validReservationTime,
     hasPeople,
     hasMobileNumber,
+    validReservationDate,
+    validReservationTime,
     asyncErrorBoundary(create),
   ],
   read: [asyncErrorBoundary(reservationExists), read],

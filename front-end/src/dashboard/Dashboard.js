@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { listReservations } from "../utils/api";
+import { listTables } from "../utils/api";
 import ErrorAlert from "../layout/ErrorAlert";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { today, next, previous } from "../utils/date-time";
 import { useHistory } from "react-router-dom";
 
@@ -17,6 +18,9 @@ function Dashboard({ date }) {
   const [reservations, setReservations] = useState([]);
   const [reservationsError, setReservationsError] = useState(null);
 
+  const [tables, setTables] = useState([]);
+  const [tablesError, setTablesError] = useState(null);
+
   const useQueryString = () => {
     const location = useLocation();
     return new URLSearchParams(location.search);
@@ -28,27 +32,24 @@ function Dashboard({ date }) {
 
   useEffect(() => {
     const params = new URLSearchParams();
-    if (date) {
-      params.append("date", date);
+    if (searchDate) {
+      params.append("date", searchDate);
     } else {
       params.delete("date");
     }
     history.push({ search: params.toString() });
-  }, [date, history]);
+  }, [searchDate, history]);
 
-  // const location = useLocation();
-  // const search = location.search; // could be '?foo=bar'
-  // const params = new URLSearchParams(search);
-  // const foo = params.get("date"); // bar
-  // if (foo)
-  // setSearchDate(foo);
-
-  console.log("searchDate=", searchDate);
+  useEffect(() => {
+    loadTables();
+  }, []);
 
   // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
 
   useEffect(loadDashboard, [searchDate]);
 
+
+  // TODO: CAN USE LINK here
   function datePrev() {
     setSearchDate(previous(searchDate));
   }
@@ -62,8 +63,6 @@ function Dashboard({ date }) {
   function loadDashboard() {
     const abortController = new AbortController();
     setReservationsError(null);
-    // console.log("load, date=", date);
-    // console.log("load, searchDate=", searchDate);
 
     listReservations({ date: searchDate }, abortController.signal)
       .then(setReservations)
@@ -71,14 +70,67 @@ function Dashboard({ date }) {
     return () => abortController.abort();
   }
 
+  function ReservationNav() {
+    return (
+      <div>
+        <div className="d-md-flex mb-3">
+          <h4 className="mb-0">Reservations for {searchDate}</h4>
+        </div>
+        <div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            data-testid="prev-date"
+            title="Go to previous day"
+            onClick={datePrev}
+          >
+            <span>Prev</span>
+          </button>
+          <span> </span>
+          <button
+            type="button"
+            className="btn btn-primary"
+            data-testid="today-date"
+            title="Go to today"
+            onClick={dateToday}
+          >
+            <span>Today</span>
+          </button>
+          <span> </span>
+          <button
+            type="button"
+            className="btn btn-primary"
+            data-testid="next-date"
+            title="Go to next day"
+            onClick={dateNext}
+          >
+            <span>Next</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  
   function ReservationList({ reservations }) {
     const rows = reservations.map(
-      ({ first_name, last_name, reservation_date, people }, index) => (
+      ({ reservation_id, first_name, last_name, reservation_date, people }, index) => (
         <tr key={index}>
           <td>{first_name}</td>
           <td>{last_name}</td>
           <td>{reservation_date}</td>
           <td>{people}</td>
+          <td>
+          <Link to={'/reservations/' + reservation_id + '/seat'}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            title="Seat this reservation"
+          >
+            <span>Seat</span>
+          </button>
+          </Link>
+          </td>
         </tr>
       )
     );
@@ -101,45 +153,50 @@ function Dashboard({ date }) {
     }
   }
 
+  function loadTables() {
+    const abortController = new AbortController();
+    setTablesError(null);
+
+    listTables({}, abortController.signal)
+      .then(setTables)
+      .catch(setTablesError);
+    return () => abortController.abort();
+  }
+
+  function TableList({ tables }) {
+    const rows = tables.map(({ table_id, table_name, capacity, reservation_id }, index) => (
+      <tr key={index}>
+        <td>{table_name}</td>
+        <td>{capacity}</td>
+        <td data-table-id-status={table_id}>{reservation_id?"Occupied":"Free"}</td>
+      </tr>
+    ));
+    if (tables.length < 1) {
+      return <div>No tables found.</div>;
+    } else {
+      return (
+        <table>
+          <thead>
+            <tr>
+              <th>Table Name</th>
+              <th>Capacity</th>
+              <th>Occupied</th>
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </table>
+      );
+    }
+  }
   return (
     <main>
       <h1>Dashboard</h1>
-      <div className="d-md-flex mb-3">
-        <h4 className="mb-0">Reservations for {searchDate}</h4>
-      </div>
       <ErrorAlert error={reservationsError} />
-      <button
-        type="button"
-        className="btn btn-primary"
-        data-testid="prev-date"
-        title="Go to previous day"
-        onClick={datePrev}
-      >
-        <span>Prev</span>
-      </button>
-      <span> </span>
-      <button
-        type="button"
-        className="btn btn-primary"
-        data-testid="today-date"
-        title="Go to today"
-        onClick={dateToday}
-      >
-        <span>Today</span>
-      </button>
-      <span> </span>
-      <button
-        type="button"
-        className="btn btn-primary"
-        data-testid="next-date"
-        title="Go to next day"
-        onClick={dateNext}
-      >
-        <span>Next</span>
-      </button>
+      <ErrorAlert error={tablesError} />
+      <ReservationNav />
       <ReservationList reservations={reservations} />
-
-      {/* {JSON.stringify(reservations)} */}
+      <hr />
+      <TableList tables={tables} />
     </main>
   );
 }
