@@ -226,7 +226,7 @@ async function reservationIdExists(req, res, next) {
     res.locals.reservations = reservations;
     return next();
   }
-  return next({ status: 404, message: `No reservation found with that date.` });
+  return next({ status: 404, message: `reservation_id ${reservationId} not found.` });
 }
 
 async function list(req, res, next) {

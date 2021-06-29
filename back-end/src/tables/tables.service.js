@@ -41,6 +41,16 @@ function update(updatedTable) {
     .then((updatedRecords) => updatedRecords[0]);
 }
 
+// Clear a table
+function clearTable(clearedTable) {
+  return knex("tables")
+    .select("*")
+    .where({ table_id: clearedTable.table_id })
+    .update(clearedTable, "*")
+    .then((updatedRecords) => updatedRecords[0]);
+}
+
+
 module.exports = {
   list,
   listAvailable,
@@ -48,4 +58,5 @@ module.exports = {
   read,
   readId,
   update,
+  clearTable,
 };

@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { listReservations } from "../utils/api";
-import { listTables } from "../utils/api";
+import React, { useEffect, useState, useReducer} from "react";
+import { listReservations, listTables, clearTable } from "../utils/api";
 import ErrorAlert from "../layout/ErrorAlert";
 import { useLocation, Link } from "react-router-dom";
 import { today, next, previous } from "../utils/date-time";
@@ -21,6 +20,8 @@ function Dashboard({ date }) {
   const [tables, setTables] = useState([]);
   const [tablesError, setTablesError] = useState(null);
 
+  // const [ignored, forceUpdate] = useReducer(x => x + 1, 0);
+
   const useQueryString = () => {
     const location = useLocation();
     return new URLSearchParams(location.search);
@@ -40,14 +41,13 @@ function Dashboard({ date }) {
     history.push({ search: params.toString() });
   }, [searchDate, history]);
 
-  useEffect(() => {
-    loadTables();
-  }, []);
+   useEffect(() => {
+     loadTables();
+   }, []);
 
   // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
 
   useEffect(loadDashboard, [searchDate]);
-
 
   // TODO: CAN USE LINK here
   function datePrev() {
@@ -58,6 +58,26 @@ function Dashboard({ date }) {
   }
   function dateNext() {
     setSearchDate(next(searchDate));
+  }
+
+  // Show a confirmation to user to make sure they actually want to clear a table
+  function finishSeating(table_id) {
+    window.confirm(
+      "Is this table ready to seat new guests? This cannot be undone."
+    )
+      ? onConfirm(table_id)
+      : onNotConfirmed();
+  }
+
+  // User confirmed the table is to be cleared
+  function onConfirm(table_id) {
+    clearTable(table_id);
+    loadTables();
+  }
+
+  // User said not to clear the table, do nothing.
+  function onNotConfirmed() {
+    console.log("Not confirmed");
   }
 
   function loadDashboard() {
@@ -111,25 +131,27 @@ function Dashboard({ date }) {
     );
   }
 
-  
   function ReservationList({ reservations }) {
     const rows = reservations.map(
-      ({ reservation_id, first_name, last_name, reservation_date, people }, index) => (
+      (
+        { reservation_id, first_name, last_name, reservation_date, people },
+        index
+      ) => (
         <tr key={index}>
           <td>{first_name}</td>
           <td>{last_name}</td>
           <td>{reservation_date}</td>
           <td>{people}</td>
           <td>
-          <Link to={'/reservations/' + reservation_id + '/seat'}>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            title="Seat this reservation"
-          >
-            <span>Seat</span>
-          </button>
-          </Link>
+            <Link to={"/reservations/" + reservation_id + "/seat"}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                title="Seat this reservation"
+              >
+                <span>Seat</span>
+              </button>
+            </Link>
           </td>
         </tr>
       )
@@ -164,13 +186,33 @@ function Dashboard({ date }) {
   }
 
   function TableList({ tables }) {
-    const rows = tables.map(({ table_id, table_name, capacity, reservation_id }, index) => (
-      <tr key={index}>
-        <td>{table_name}</td>
-        <td>{capacity}</td>
-        <td data-table-id-status={table_id}>{reservation_id?"Occupied":"Free"}</td>
-      </tr>
-    ));
+    const rows = tables.map(
+      ({ table_id, table_name, capacity, reservation_id }, index) => (
+        <tr key={index}>
+          <td>{table_name}</td>
+          <td>{capacity}</td>
+          <td data-table-id-status={table_id}>
+            {reservation_id ? "Occupied" : "Free"}
+          </td>
+          {reservation_id ? (
+            <td>
+              {" "}
+              <button
+                type="button"
+                data-table-id-finish={table_id}
+                className="btn btn-secondary"
+                title="Finish seating"
+                onClick={(e) => finishSeating(table_id)}
+              >
+                <span>Finish</span>
+              </button>
+            </td>
+          ) : (
+            <td></td>
+          )}
+        </tr>
+      )
+    );
     if (tables.length < 1) {
       return <div>No tables found.</div>;
     } else {
@@ -181,6 +223,7 @@ function Dashboard({ date }) {
               <th>Table Name</th>
               <th>Capacity</th>
               <th>Occupied</th>
+              <th>Finish</th>
             </tr>
           </thead>
           <tbody>{rows}</tbody>

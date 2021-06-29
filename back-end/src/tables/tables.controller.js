@@ -74,22 +74,24 @@ async function tableExists(req, res, next) {
     res.locals.table = table;
     return next();
   }
-  return next({ status: 404, message: `No table found with that name.` });
+  next({ status: 404, message: `No table found with that name.` });
 }
 
 async function tableIdExists(req, res, next) {
   const { table_id } = req.params;
+
   const table = await service.readId(table_id);
-  if (table) {
+  if (table.length > 0) {
+    console.log("table exists=", table[0]);
     res.locals.table = table[0];
     return next();
   }
-  return next({ status: 404, message: `table_id not found.` });
+  next({ status: 404, message: `table_id ${table_id} not found.` });
 }
 
 function hasReservationId(req, res, next) {
   const reservation_id = req.body.data.reservation_id;
-  console.log("reservation_id=", reservation_id);
+  // console.log("reservation_id=", reservation_id);
   if (reservation_id) {
     return next();
   }
@@ -132,6 +134,16 @@ function tableIsOccupied(req, res, next) {
   next({ status: 400, message: "table is occupied" });
 }
 
+// Check if table is already occupied
+function tableIsNotOccupied(req, res, next) {
+  const table = res.locals.table;
+
+  if (table.reservation_id) {
+    return next();
+  }
+
+  next({ status: 400, message: "table is not occupied" });
+}
 
 async function list(req, res, next) {
   const available = req.query.available;
@@ -177,6 +189,24 @@ async function update(req, res) {
   res.json({ data: result });
 }
 
+// Update an existing table
+async function clearTable(req, res) {
+  const clearedTable = {
+    ...res.locals.table,
+    reservation_id: null,
+  };
+
+  const data = await service.clearTable(clearedTable);
+
+  // clearedTable.updated_at = Date.now();
+
+  const result = {
+    ...clearedTable,
+  };
+
+  res.json({ data: result });
+}
+
 module.exports = {
   list: list,
   create: [
@@ -188,7 +218,7 @@ module.exports = {
     create,
   ],
 
-  update: [
+  seatTable: [
     asyncErrorBoundary(hasData),
     asyncErrorBoundary(tableIdExists),
     asyncErrorBoundary(hasReservationId),
@@ -198,4 +228,9 @@ module.exports = {
     update,
   ],
   read: [asyncErrorBoundary(tableExists), read],
+  clearTable: [
+    asyncErrorBoundary(tableIdExists),
+    asyncErrorBoundary(tableIsNotOccupied),
+    clearTable,
+  ],
 };
