@@ -8,7 +8,7 @@ function NewTable() {
 
   const [table, setTable] = useState({
     table_name: "",
-    capacity: 1,
+    capacity: 0,
   });
 
   function changeHandler({ target: { name, value, type } }) {

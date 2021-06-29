@@ -97,7 +97,7 @@ function checkDayOfWeek(date, time) {
 
 function checkReservationTime(date, time) {
   const aReservationDay = new Date(date + " " + time);
-  console.log("aReservationTime=", aReservationDay)
+  // console.log("aReservationTime=", aReservationDay)
   let message = "";
   var startBusinessHours = new Date(date + " " + time);
   startBusinessHours.setHours(10,30,0); // 10:30 am is when restaraunt opens
@@ -188,15 +188,12 @@ function isNumeric(value) {
 
 function hasPeople(req, res, next) {
   const people = req.body.data.people;
-  console.log("people = ", people);
-  console.log("typeofpeople=", typeof people);
+  // console.log("people = ", people);
   if (typeof people == "number") {
     if (people >= 1) {
-      // console.log("returning true=", people);
       return next();
     }
   }
-  // console.log("returning false=", people);
   next({ status: 400, message: "people is required" });
 }
 
@@ -210,14 +207,26 @@ function hasMobileNumber(req, res, next) {
 
 async function reservationExists(req, res, next) {
   const { date } = req.query;
-  console.log("date =", date);
+  // console.log("date =", date);
   const reservations = await service.read(date);
-  console.log("reservations =", reservations);
+  // console.log("reservations =", reservations);
   if (reservations) {
     res.locals.reservations = reservations;
     return next();
   }
   return next({ status: 404, message: `No reservations found for that date.` });
+}
+
+
+async function reservationIdExists(req, res, next) {
+  const { reservationId } = req.params;
+  const reservations = await service.readById(reservationId);
+  // console.log("reservations =", reservations);
+  if (reservations) {
+    res.locals.reservations = reservations;
+    return next();
+  }
+  return next({ status: 404, message: `No reservation found with that date.` });
 }
 
 async function list(req, res, next) {
@@ -227,7 +236,7 @@ async function list(req, res, next) {
 async function read(req, res, next) {
   // const knexInstance = req.app.get("db");
   // const { reservations } = res.locals;
-  res.json({ data: res.locals.reservations });
+  res.status(200).json({ data: res.locals.reservations });
 }
 
 // Create a new reservation
@@ -251,4 +260,5 @@ module.exports = {
     asyncErrorBoundary(create),
   ],
   read: [asyncErrorBoundary(reservationExists), read],
+  readById: [asyncErrorBoundary(reservationIdExists), read],
 };

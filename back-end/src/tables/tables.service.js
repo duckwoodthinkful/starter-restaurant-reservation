@@ -1,15 +1,26 @@
 const knex = require("../db/connection");
 
+// List all existing tables
 function list() {
-  return knex("tables").select("*").orderBy('table_name', 'asc');
+  return knex("tables").select("*").orderBy("table_name", "asc");
 }
 
-function read(table_name) {
-  // your solution here
-  console.log("Reading tables", table_name);
+// List all available tables
+function listAvailable() {
   return knex("tables")
-  .select("*")
-  .where({table_name: table_name});
+    .select("*")
+    .groupBy("table_id")
+    .havingNull("reservation_id");
+}
+
+// Read an existing table
+function read(table_name) {
+  return knex("tables").select("*").where({ table_name: table_name });
+}
+
+// Read an existing table by id
+function readId(table_id) {
+  return knex("tables").select("*").where({ table_id: table_id });
 }
 
 // Create a new table
@@ -20,9 +31,21 @@ function create(table) {
     .then((createdRecords) => createdRecords[0]);
 }
 
+// Update an existing table
+function update(updatedTable) {
+  console.log("updatedTable=", updatedTable);
+  return knex("tables")
+    .select("*")
+    .where({ table_id: updatedTable.table_id })
+    .update(updatedTable, "*")
+    .then((updatedRecords) => updatedRecords[0]);
+}
 
 module.exports = {
   list,
+  listAvailable,
   create,
   read,
+  readId,
+  update,
 };

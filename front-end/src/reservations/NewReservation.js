@@ -7,12 +7,6 @@ import ErrorAlert from "../layout/ErrorAlert";
 function NewReservation() {
   const history = useHistory();
 
-  // const boundPeople = (value, min, max) => {
-  //     value = Math.max(Number(min), Math.min(Number(max), Number(value)));
-
-  //     return value;
-  // }
-
   const [reservation, setReservation] = useState({
     first_name: "",
     last_name: "",

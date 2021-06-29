@@ -104,3 +104,26 @@ export async function createTable(table, signal) {
   };
   return await fetchJson(url, options);
 }
+
+// Seats a reservation
+export async function createSeat(seat, signal) {
+  console.log ("createSeat - ", seat);
+  const url = new URL(`${API_BASE_URL}/tables/${seat.table_id}/seat`);
+  const options = {
+    method: "PUT",
+    headers,
+    body: JSON.stringify({ data: {reservation_id: seat.reservation_id }}),
+    // body: JSON.stringify({ data: seat}),
+    signal,
+  };
+  return await fetchJson(url, options);
+}
+
+// Reads a specific reservation
+export async function readReservation(reservationId, signal) {
+  const url = new URL(`${API_BASE_URL}/reservations/${reservationId}`);
+
+  return await fetchJson(url, { headers, signal }, [])
+    .then(formatReservationDate)
+    .then(formatReservationTime);
+}
