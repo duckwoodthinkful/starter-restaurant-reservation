@@ -82,7 +82,7 @@ async function tableIdExists(req, res, next) {
 
   const table = await service.readId(table_id);
   if (table.length > 0) {
-    console.log("table exists=", table[0]);
+    // console.log("table exists=", table[0]);
     res.locals.table = table[0];
     return next();
   }
@@ -102,6 +102,7 @@ async function reservationIdExists(req, res, next) {
   const { reservation_id } = req.body.data;
   const reservation = await reservationService.readById(reservation_id);
   if (reservation) {
+    // console.log("reservationIDExists reservation=", reservation);
     res.locals.reservation = reservation;
     return next();
   }
@@ -134,10 +135,21 @@ function tableIsOccupied(req, res, next) {
   next({ status: 400, message: "table is occupied" });
 }
 
+function reservationIsAlreadySeated(req, res, next) {
+  const reservation = res.locals.reservation;
+  // console.log ("reservationIsAlreadySeated reservation = ", reservation);
+  if (reservation.status === "booked") {
+    return next();
+  }
+
+  next({ status: 400, message: "table is already seated" });
+}
+
 // Check if table is already occupied
 function tableIsNotOccupied(req, res, next) {
   const table = res.locals.table;
 
+  // console.log ("tableIsNotOccupied table=", table);
   if (table.reservation_id) {
     return next();
   }
@@ -168,8 +180,8 @@ async function create(req, res) {
   res.status(201).json({ data: data });
 }
 
-// Update an existing table
-async function update(req, res) {
+// Seat a table
+async function seatTable(req, res) {
   // console.log("bodydata = ", req.body.data)
   const updatedTable = {
     ...res.locals.table,
@@ -177,8 +189,13 @@ async function update(req, res) {
   };
 
   // console.log("inupdate, updatedTable=", updatedTable);
-  const data = await service.update(updatedTable);
+  const data = await service.seatTable(updatedTable);
 
+  // console.log ("in seatTable, data - ", data);
+
+  const reservation = await reservationService.readById(updatedTable.reservation_id);
+
+  // console.log ("in seatTable, reservation - ", reservation);
   // updatedTable.updated_at = Date.now();
   // updatedTable.created_at = Date.now();
 
@@ -186,25 +203,26 @@ async function update(req, res) {
     ...updatedTable,
   };
 
-  res.json({ data: result });
+  res.status(200).json({ data: result });
 }
 
-// Update an existing table
+// Clear a table
 async function clearTable(req, res) {
   const clearedTable = {
     ...res.locals.table,
-    reservation_id: null,
+    // reservation_id: null,
   };
 
   const data = await service.clearTable(clearedTable);
 
-  // clearedTable.updated_at = Date.now();
-
   const result = {
     ...clearedTable,
+    reservation_id: null,
   };
 
-  res.json({ data: result });
+  // console.log ("Table was cleared.");
+
+  res.status(200).json({ data: result });
 }
 
 module.exports = {
@@ -223,9 +241,10 @@ module.exports = {
     asyncErrorBoundary(tableIdExists),
     asyncErrorBoundary(hasReservationId),
     asyncErrorBoundary(reservationIdExists),
+    asyncErrorBoundary(reservationIsAlreadySeated),
     asyncErrorBoundary(tableHasSufficientCapacity),
     asyncErrorBoundary(tableIsOccupied),
-    update,
+    seatTable,
   ],
   read: [asyncErrorBoundary(tableExists), read],
   clearTable: [

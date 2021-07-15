@@ -41,11 +41,11 @@ function NewReservation() {
 
     var startBusinessHours = new Date(reservation.reservation_date+" "+reservation.reservation_time);
     startBusinessHours.setHours(10,30,0); // 10:30 am is when restaraunt opens
-    console.log("startH=", startBusinessHours);
+    // console.log("startH=", startBusinessHours);
     var endBusinessHours = new Date(reservation.reservation_date+" "+reservation.reservation_time);
     endBusinessHours.setHours(21,30,0); // 9:30 pm latest reservation
-    console.log("endH=", endBusinessHours);
-    console.log(aReservationDay);
+    // console.log("endH=", endBusinessHours);
+    // console.log(aReservationDay);
     
     if(!(aReservationDay >= startBusinessHours && aReservationDay < endBusinessHours )){
       message += "\nReservation must be between 10:30 am and 9:30 pm."

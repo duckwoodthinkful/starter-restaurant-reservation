@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import ErrorAlert from "../layout/ErrorAlert";
-import { listTables, createSeat, readReservation } from "../utils/api";
+import { listTables, createSeat, readReservation, updateReservationStatus } from "../utils/api";
 
 function NewSeat() {
   const history = useHistory();
@@ -71,6 +71,7 @@ function NewSeat() {
     setError(null);
     if (validateForm()) {
       createSeat(seat)
+        .then(updateReservationStatus({reservation_id: seat.reservation_id, status: "seated"}))
         .then(() => {
           history.push("/");
         })

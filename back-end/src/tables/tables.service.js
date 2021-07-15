@@ -31,25 +31,49 @@ function create(table) {
     .then((createdRecords) => createdRecords[0]);
 }
 
-// Update an existing table
-function update(updatedTable) {
-  console.log("updatedTable=", updatedTable);
-  return knex("tables")
-    .select("*")
-    .where({ table_id: updatedTable.table_id })
-    .update(updatedTable, "*")
-    .then((updatedRecords) => updatedRecords[0]);
+// Seat a table
+function seatTable(updatedTable) {
+  // console.log("updatedTable=", updatedTable);
+  return knex.transaction(function (trx) {
+    knex("tables")
+      .update({ reservation_id: updatedTable.reservation_id })
+      .where({ table_id: updatedTable.table_id })
+      .transacting(trx)
+      .then(function () {
+        return knex("reservations")
+          .update({ status: "seated" })
+          .where({ reservation_id: updatedTable.reservation_id })
+          .transacting(trx);
+      })
+      .then(trx.commit)
+      .catch(function (e) {
+        t.rollback();
+        throw e;
+      });
+  });
 }
 
 // Clear a table
 function clearTable(clearedTable) {
-  return knex("tables")
-    .select("*")
-    .where({ table_id: clearedTable.table_id })
-    .update(clearedTable, "*")
-    .then((updatedRecords) => updatedRecords[0]);
+  // console.log("in clearTable=", clearedTable);
+  return knex.transaction(function (t) {
+    knex("tables")
+      .update({ reservation_id: null })
+      .where({ table_id: clearedTable.table_id })
+      .transacting(t)
+      .then(function () {
+        return knex("reservations")
+          .update({ status: "finished" })
+          .where({ reservation_id: clearedTable.reservation_id })
+          .transacting(t);
+      })
+      .then(t.commit)
+      .catch(function (e) {
+        t.rollback();
+        throw e;
+      });
+  });
 }
-
 
 module.exports = {
   list,
@@ -57,6 +81,6 @@ module.exports = {
   create,
   read,
   readId,
-  update,
+  seatTable,
   clearTable,
 };

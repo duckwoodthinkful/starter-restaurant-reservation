@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useReducer} from "react";
+import React, { useEffect, useState } from "react";
 import { listReservations, listTables, clearTable } from "../utils/api";
 import ErrorAlert from "../layout/ErrorAlert";
 import { useLocation, Link } from "react-router-dom";
@@ -20,7 +20,7 @@ function Dashboard({ date }) {
   const [tables, setTables] = useState([]);
   const [tablesError, setTablesError] = useState(null);
 
-  // const [ignored, forceUpdate] = useReducer(x => x + 1, 0);
+  const [finishing, setFinishing] = useState(0);
 
   const useQueryString = () => {
     const location = useLocation();
@@ -41,13 +41,14 @@ function Dashboard({ date }) {
     history.push({ search: params.toString() });
   }, [searchDate, history]);
 
-   useEffect(() => {
-     loadTables();
-   }, []);
+  useEffect(() => {
+    console.log("finishingUseEffect");
+    loadTables();
+  }, [finishing]);
 
   // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
 
-  useEffect(loadDashboard, [searchDate]);
+  useEffect(loadReservations, [searchDate, finishing]);
 
   // TODO: CAN USE LINK here
   function datePrev() {
@@ -61,26 +62,39 @@ function Dashboard({ date }) {
   }
 
   // Show a confirmation to user to make sure they actually want to clear a table
-  function finishSeating(table_id) {
-    window.confirm(
+  function finishSeating(table_id, reservation_id) {
+    var answer = window.confirm(
       "Is this table ready to seat new guests? This cannot be undone."
-    )
-      ? onConfirm(table_id)
-      : onNotConfirmed();
+    );
+    if (answer) {
+      setFinishing(table_id);
+      onConfirm(table_id, reservation_id);
+    } else return;
   }
 
   // User confirmed the table is to be cleared
-  function onConfirm(table_id) {
-    clearTable(table_id);
-    loadTables();
+  function onConfirm(table_id, reservation_id) {
+    console.log("confirm tableid=", table_id);
+    clearTable(table_id).then(() => setFinishing(0));
   }
 
   // User said not to clear the table, do nothing.
   function onNotConfirmed() {
     console.log("Not confirmed");
+    setFinishing(0);
   }
 
-  function loadDashboard() {
+  function loadTables() {
+    const abortController = new AbortController();
+    setTablesError(null);
+    console.log("Load Tables");
+    listTables({}, abortController.signal)
+      .then(setTables)
+      .catch(setTablesError);
+    return () => abortController.abort();
+  }
+
+  function loadReservations() {
     const abortController = new AbortController();
     setReservationsError(null);
 
@@ -134,7 +148,14 @@ function Dashboard({ date }) {
   function ReservationList({ reservations }) {
     const rows = reservations.map(
       (
-        { reservation_id, first_name, last_name, reservation_date, people },
+        {
+          reservation_id,
+          first_name,
+          last_name,
+          reservation_date,
+          people,
+          status,
+        },
         index
       ) => (
         <tr key={index}>
@@ -142,17 +163,7 @@ function Dashboard({ date }) {
           <td>{last_name}</td>
           <td>{reservation_date}</td>
           <td>{people}</td>
-          <td>
-            <Link to={"/reservations/" + reservation_id + "/seat"}>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                title="Seat this reservation"
-              >
-                <span>Seat</span>
-              </button>
-            </Link>
-          </td>
+          <ReservationStatus status={status} reservation_id={reservation_id} />
         </tr>
       )
     );
@@ -167,6 +178,7 @@ function Dashboard({ date }) {
               <th>Last Name</th>
               <th>Reservation Date</th>
               <th>People</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>{rows}</tbody>
@@ -175,17 +187,81 @@ function Dashboard({ date }) {
     }
   }
 
-  function loadTables() {
-    const abortController = new AbortController();
-    setTablesError(null);
-
-    listTables({}, abortController.signal)
-      .then(setTables)
-      .catch(setTablesError);
-    return () => abortController.abort();
+  function TableButtons({ reservation_id, table_id }) {
+    if (false) {
+      if (table_id === finishing) {
+        return (
+          <div>
+            <button
+              type="button"
+              data-table-id-confirm={table_id}
+              className="btn btn-secondary"
+              title="Ok"
+              onClick={(e) => onConfirm(table_id, reservation_id)}
+            >
+              <span>Ok</span>
+            </button>
+            <span> </span>
+            <button
+              type="button"
+              data-table-id-cancel={table_id}
+              className="btn btn-secondary"
+              title="Cancel"
+              onClick={(e) => onNotConfirmed()}
+            >
+              <span>Cancel</span>
+            </button>
+          </div>
+        );
+      }
+      return null;
+    } else if (reservation_id) {
+      return (
+        <button
+          type="button"
+          data-table-id-finish={table_id}
+          className="btn btn-secondary"
+          title="Finish seating"
+          onClick={(e) => finishSeating(table_id, reservation_id)}
+        >
+          <span>Finish</span>
+        </button>
+      );
+    } else {
+      return null;
+    }
   }
 
-  function TableList({ tables }) {
+  function ReservationStatus({ status, reservation_id }) {
+    if (status === "booked") {
+      return (
+        <>
+          <td data-reservation-id-status={reservation_id}>booked</td>
+          <td>
+            <Link to={"/reservations/" + reservation_id + "/seat"}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                title="Seat this reservation"
+              >
+                <span>Seat</span>
+              </button>
+            </Link>
+          </td>
+        </>
+      );
+    } else if (status === "seated") {
+      return (
+        <>
+          <td data-reservation-id-status={reservation_id}>seated</td>
+          <td></td>
+        </>
+      );
+    }
+    return null;
+  }
+
+  function TableList({ tables, finishing }) {
     const rows = tables.map(
       ({ table_id, table_name, capacity, reservation_id }, index) => (
         <tr key={index}>
@@ -196,16 +272,11 @@ function Dashboard({ date }) {
           </td>
           {reservation_id ? (
             <td>
-              {" "}
-              <button
-                type="button"
-                data-table-id-finish={table_id}
-                className="btn btn-secondary"
-                title="Finish seating"
-                onClick={(e) => finishSeating(table_id)}
-              >
-                <span>Finish</span>
-              </button>
+              <TableButtons
+                reservation_id={reservation_id}
+                table_id={table_id}
+                finishing={finishing}
+              />
             </td>
           ) : (
             <td></td>
@@ -223,7 +294,6 @@ function Dashboard({ date }) {
               <th>Table Name</th>
               <th>Capacity</th>
               <th>Occupied</th>
-              <th>Finish</th>
             </tr>
           </thead>
           <tbody>{rows}</tbody>
@@ -239,7 +309,7 @@ function Dashboard({ date }) {
       <ReservationNav />
       <ReservationList reservations={reservations} />
       <hr />
-      <TableList tables={tables} />
+      <TableList tables={tables} finishing={finishing} />
     </main>
   );
 }

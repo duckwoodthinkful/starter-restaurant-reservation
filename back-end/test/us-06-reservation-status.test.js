@@ -182,6 +182,7 @@ describe("US-06 - Reservation status", () => {
         .set("Accept", "application/json")
         .send({ data: { reservation_id: reservationOne.reservation_id } });
 
+      console.log("firstSeatResponse Body=", firstSeatResponse.body);        
       expect(firstSeatResponse.body.error).toBeUndefined();
       expect(firstSeatResponse.status).toBe(200);
 
@@ -190,6 +191,7 @@ describe("US-06 - Reservation status", () => {
         .set("Accept", "application/json")
         .send({ data: { reservation_id: reservationOne.reservation_id } });
 
+      console.log("secondReponse = ", secondSeatResponse.body)
       expect(secondSeatResponse.body.error).toContain("seated");
       expect(secondSeatResponse.status).toBe(400);
     });
@@ -218,12 +220,15 @@ describe("US-06 - Reservation status", () => {
       expect(seatResponse.body.error).toBeUndefined();
       expect(seatResponse.status).toBe(200);
 
+      console.log("DELETE test After Seat seatResponse = ", seatResponse.body);
+
       const finishResponse = await request(app)
         .delete(`/tables/${tableOne.table_id}/seat`)
         .set("Accept", "application/json")
         .send({ data: { reservation_id: reservationOne.reservation_id } });
 
-      expect(finishResponse.body.error).toBeUndefined();
+        console.log("DELETE test After Seat finishResponse = ", finishResponse.body);
+        expect(finishResponse.body.error).toBeUndefined();
       expect(finishResponse.status).toBe(200);
 
       const reservationResponse = await request(app)

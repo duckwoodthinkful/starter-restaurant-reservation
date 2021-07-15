@@ -100,12 +100,17 @@ function checkReservationTime(date, time) {
   // console.log("aReservationTime=", aReservationDay)
   let message = "";
   var startBusinessHours = new Date(date + " " + time);
-  startBusinessHours.setHours(10,30,0); // 10:30 am is when restaraunt opens
+  startBusinessHours.setHours(10, 30, 0); // 10:30 am is when restaraunt opens
   var endBusinessHours = new Date(date + " " + time);
-  endBusinessHours.setHours(21,30,0); // 9:30 pm latest reservation
-  
-  if(!(aReservationDay >= startBusinessHours && aReservationDay < endBusinessHours )){
-    message += "\nReservation must be between 10:30 am and 9:30 pm."
+  endBusinessHours.setHours(21, 30, 0); // 9:30 pm latest reservation
+
+  if (
+    !(
+      aReservationDay >= startBusinessHours &&
+      aReservationDay < endBusinessHours
+    )
+  ) {
+    message += "\nReservation must be between 10:30 am and 9:30 pm.";
   }
 
   return message;
@@ -197,6 +202,37 @@ function hasPeople(req, res, next) {
   next({ status: 400, message: "people is required" });
 }
 
+function invalidStatus(req, res, next) {
+  const status = req.body.data.status;
+
+  if (typeof status === 'undefined') return next();
+
+  if (status === null) return next();
+
+  if (status === "booked") return next();
+
+  next({ status: 400, message: `status ${status} is invalid` });
+}
+
+function validStatus(req, res, next) {
+  const status = req.body.data.status;
+
+  if (res.locals.reservations.status)
+
+  if (status === "booked" || status === "seated" || status === "finished") return next();
+
+  next({ status: 400, message: `status ${status} received value must not be null nor undefined` });
+}
+
+function statusNotFinished(req, res, next) {
+
+  if (res.locals.reservations.status !== "finished")
+    return next();
+
+  next({ status: 400, message: `a finished reservation cannot be updated` });
+}
+
+
 function hasMobileNumber(req, res, next) {
   const mobile_number = req.body.data.mobile_number;
   if (mobile_number) {
@@ -217,7 +253,6 @@ async function reservationExists(req, res, next) {
   return next({ status: 404, message: `No reservations found for that date.` });
 }
 
-
 async function reservationIdExists(req, res, next) {
   const { reservationId } = req.params;
   const reservations = await service.readById(reservationId);
@@ -226,7 +261,10 @@ async function reservationIdExists(req, res, next) {
     res.locals.reservations = reservations;
     return next();
   }
-  return next({ status: 404, message: `reservation_id ${reservationId} not found.` });
+  return next({
+    status: 404,
+    message: `reservation_id ${reservationId} not found.`,
+  });
 }
 
 async function list(req, res, next) {
@@ -235,7 +273,8 @@ async function list(req, res, next) {
 
 async function read(req, res, next) {
   // const knexInstance = req.app.get("db");
-  // const { reservations } = res.locals;
+  const { reservations } = res.locals;
+  // console.log("reservations = ", reservations);
   res.status(200).json({ data: res.locals.reservations });
 }
 
@@ -243,6 +282,26 @@ async function read(req, res, next) {
 async function create(req, res) {
   const data = await service.create(req.body.data);
   res.status(201).json({ data: data });
+}
+
+// Update an existing reservation
+async function update(req, res) {
+  // console.log("updatebodydata = ", req.body.data);
+  // console.log("locals = ", res.locals.reservations);
+
+  const updatedReservation = {
+    ...res.locals.reservations,
+    ...req.body.data,
+  };
+  // console.log("updatedReservationinupdate = ", updatedReservation);
+
+  const data = await service.update(updatedReservation);
+
+  const result = {
+    ...updatedReservation,
+  };
+
+  res.json({ data: result });
 }
 
 module.exports = {
@@ -257,8 +316,10 @@ module.exports = {
     hasMobileNumber,
     validReservationDate,
     validReservationTime,
+    invalidStatus,
     asyncErrorBoundary(create),
   ],
   read: [asyncErrorBoundary(reservationExists), read],
   readById: [asyncErrorBoundary(reservationIdExists), read],
+  update: [asyncErrorBoundary(reservationIdExists), asyncErrorBoundary(statusNotFinished), asyncErrorBoundary(validStatus), update],
 };
