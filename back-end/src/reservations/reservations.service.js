@@ -13,6 +13,15 @@ function read(reservation_date) {
   .orderBy('reservation_time', 'asc');
 }
  
+function readByMobile(mobile_number) {
+  return knex("reservations")
+    .whereRaw(
+      "translate(mobile_number, '() -', '') like ?",
+      `%${mobile_number.replace(/\D/g, "")}%`
+    )
+    .orderBy("reservation_date");
+}
+
 function readById(reservation_id) {
 
   // console.log("Reading reservations", reservation_id);
@@ -46,5 +55,6 @@ module.exports = {
   create,
   read,
   readById,
+  readByMobile,
   update,
 };

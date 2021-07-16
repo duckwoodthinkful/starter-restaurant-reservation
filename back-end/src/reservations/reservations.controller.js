@@ -205,7 +205,7 @@ function hasPeople(req, res, next) {
 function invalidStatus(req, res, next) {
   const status = req.body.data.status;
 
-  if (typeof status === 'undefined') return next();
+  if (typeof status === "undefined") return next();
 
   if (status === null) return next();
 
@@ -218,20 +218,20 @@ function validStatus(req, res, next) {
   const status = req.body.data.status;
 
   if (res.locals.reservations.status)
+    if (status === "booked" || status === "seated" || status === "finished")
+      return next();
 
-  if (status === "booked" || status === "seated" || status === "finished") return next();
-
-  next({ status: 400, message: `status ${status} received value must not be null nor undefined` });
+  next({
+    status: 400,
+    message: `status ${status} received value must not be null nor undefined`,
+  });
 }
 
 function statusNotFinished(req, res, next) {
-
-  if (res.locals.reservations.status !== "finished")
-    return next();
+  if (res.locals.reservations.status !== "finished") return next();
 
   next({ status: 400, message: `a finished reservation cannot be updated` });
 }
-
 
 function hasMobileNumber(req, res, next) {
   const mobile_number = req.body.data.mobile_number;
@@ -242,13 +242,23 @@ function hasMobileNumber(req, res, next) {
 }
 
 async function reservationExists(req, res, next) {
-  const { date } = req.query;
-  // console.log("date =", date);
-  const reservations = await service.read(date);
-  // console.log("reservations =", reservations);
-  if (reservations) {
-    res.locals.reservations = reservations;
-    return next();
+  const { date, mobile_number } = req.query;
+
+  if (date) {
+    // console.log("date =", date);
+    const reservations = await service.read(date);
+    // console.log("reservations =", reservations);
+    if (reservations) {
+      res.locals.reservations = reservations;
+      return next();
+    }
+  } else if (mobile_number) {
+    const reservations = await service.readByMobile(mobile_number);
+    console.log("mobile number reservations =", reservations);
+    if (reservations) {
+      res.locals.reservations = reservations;
+      return next();
+    }
   }
   return next({ status: 404, message: `No reservations found for that date.` });
 }
@@ -321,5 +331,10 @@ module.exports = {
   ],
   read: [asyncErrorBoundary(reservationExists), read],
   readById: [asyncErrorBoundary(reservationIdExists), read],
-  update: [asyncErrorBoundary(reservationIdExists), asyncErrorBoundary(statusNotFinished), asyncErrorBoundary(validStatus), update],
+  update: [
+    asyncErrorBoundary(reservationIdExists),
+    asyncErrorBoundary(statusNotFinished),
+    asyncErrorBoundary(validStatus),
+    update,
+  ],
 };

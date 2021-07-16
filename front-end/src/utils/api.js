@@ -151,3 +151,16 @@ export async function clearTable(table_id, signal) {
   };
   return await fetchJson(url, options);
 }
+
+// Find reservations
+export async function findReservationsByMobileNumber(params, signal) {
+  const url = new URL(`${API_BASE_URL}/reservations`);
+
+  // console.log("params = ", params);
+  Object.entries(params).forEach(([key, value]) =>
+    url.searchParams.append(key, value.toString())
+  );
+  return await fetchJson(url, { headers, signal }, [])
+    .then(formatReservationDate)
+    .then(formatReservationTime);
+}
