@@ -218,7 +218,7 @@ function validStatus(req, res, next) {
   const status = req.body.data.status;
 
   if (res.locals.reservations.status)
-    if (status === "booked" || status === "seated" || status === "finished")
+    if (status === "booked" || status === "seated" || status === "finished" || status === "cancelled")
       return next();
 
   next({
@@ -317,21 +317,35 @@ async function update(req, res) {
 module.exports = {
   list: asyncErrorBoundary(list),
   create: [
-    hasData,
-    hasFirstName,
-    hasLastName,
-    hasReservationDate,
-    hasReservationTime,
-    hasPeople,
-    hasMobileNumber,
-    validReservationDate,
-    validReservationTime,
-    invalidStatus,
-    asyncErrorBoundary(create),
+    asyncErrorBoundary(hasData),
+    asyncErrorBoundary(hasFirstName),
+    asyncErrorBoundary(hasLastName),
+    asyncErrorBoundary(hasReservationDate),
+    asyncErrorBoundary(hasReservationTime),
+    asyncErrorBoundary(hasPeople),
+    asyncErrorBoundary(hasMobileNumber),
+    asyncErrorBoundary(validReservationDate),
+    asyncErrorBoundary(validReservationTime),
+    asyncErrorBoundary(invalidStatus),
+    create,
+  ],
+  update: [
+    asyncErrorBoundary(reservationIdExists),
+    asyncErrorBoundary(hasData),
+    asyncErrorBoundary(hasFirstName),
+    asyncErrorBoundary(hasLastName),
+    asyncErrorBoundary(hasReservationDate),
+    asyncErrorBoundary(hasReservationTime),
+    asyncErrorBoundary(hasPeople),
+    asyncErrorBoundary(hasMobileNumber),
+    asyncErrorBoundary(validReservationDate),
+    asyncErrorBoundary(validReservationTime),
+    asyncErrorBoundary(invalidStatus),
+    update,
   ],
   read: [asyncErrorBoundary(reservationExists), read],
   readById: [asyncErrorBoundary(reservationIdExists), read],
-  update: [
+  updateStatus: [
     asyncErrorBoundary(reservationIdExists),
     asyncErrorBoundary(statusNotFinished),
     asyncErrorBoundary(validStatus),

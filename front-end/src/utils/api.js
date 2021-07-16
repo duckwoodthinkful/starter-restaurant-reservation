@@ -131,6 +131,19 @@ export async function updateReservationStatus(reservationInfo, signal) {
   return await fetchJson(url, options);
 }
 
+// Updates a reservation
+export async function updateReservation(reservation, signal) {
+  const url = new URL(`${API_BASE_URL}/reservations/${reservation.reservation_id}`);
+  const options = {
+    method: "PUT",
+    headers,
+    body: JSON.stringify({ data: reservation }),
+    signal,
+  };
+  return await fetchJson(url, options);
+}
+
+
 // Reads a specific reservation
 export async function readReservation(reservationId, signal) {
   const url = new URL(`${API_BASE_URL}/reservations/${reservationId}`);

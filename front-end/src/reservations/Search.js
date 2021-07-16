@@ -73,7 +73,7 @@ function SearchReservation() {
         <button type="submit">Find</button>
       </form>
       <hr />
-      <ReservationList reservations={reservations} />
+      <ReservationList reservations={reservations} updateCallback={findReservations}/>
     </main>
   );
 }

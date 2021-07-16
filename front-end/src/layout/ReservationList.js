@@ -1,7 +1,38 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { updateReservationStatus } from "../utils/api";
 
-function ReservationList({ reservations }) {
+
+
+
+function ReservationList({ reservations, updateCallback }) {
+  const [finishing, setFinishing] = useState(0);
+
+  useEffect(() => {
+    console.log("finishingUseEffect");
+  }, [finishing]);
+
+
+
+  // Show a confirmation to user to make sure they actually want to clear a table
+  function cancelReservation(reservation_id) {
+    var answer = window.confirm(
+      "Do you want to cancel this reservation? This cannot be undone."
+    );
+    if (answer) {
+      setFinishing(reservation_id);
+      onConfirm(reservation_id);
+    } else return;
+  }
+
+  // User confirmed the reservation is to be cancelled
+  function onConfirm(reservation_id) {
+    console.log("confirm cancel reservation_id=", reservation_id);
+    // cancelReservation(reservation_id).then(() => setFinishing(0));
+    updateReservationStatus({reservation_id: reservation_id, status: "cancelled"}).then(()=>updateCallback());
+  }
+
+
   const rows = reservations.map(
     (
       {
@@ -20,6 +51,18 @@ function ReservationList({ reservations }) {
         <td>{reservation_date}</td>
         <td>{people}</td>
         <ReservationStatus status={status} reservation_id={reservation_id} />
+          <td>
+          {status!=="cancelled" && (<button
+          type="button"
+          data-reservation-id-cancel={reservation_id}
+          className="btn btn-secondary"
+          title="Cancel Reservation"
+          onClick={(e) => cancelReservation(reservation_id)}
+        >
+          <span>Cancel</span>
+        </button>
+)}
+        </td>
       </tr>
     )
   );
@@ -59,12 +102,24 @@ function ReservationStatus({ status, reservation_id }) {
             </button>
           </Link>
         </td>
+        <td>
+        <Link to={"/reservations/" + reservation_id + "/edit"} href={"/reservations/" + reservation_id + "/edit"}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              title="Edit this reservation"
+            >
+              <span>Edit</span>
+            </button>
+          </Link>
+          </td>
       </>
     );
   } else if (status === "seated") {
     return (
       <>
         <td data-reservation-id-status={reservation_id}>seated</td>
+        <td></td>
         <td></td>
       </>
     );

@@ -240,7 +240,7 @@ function Dashboard({ date }) {
       <ErrorAlert error={reservationsError} />
       <ErrorAlert error={tablesError} />
       <ReservationNav />
-      <ReservationList reservations={reservations} />
+      <ReservationList reservations={reservations} updateCallback={loadReservations} />
       <hr />
       <TableList tables={tables} finishing={finishing} />
     </main>
