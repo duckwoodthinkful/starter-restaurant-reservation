@@ -6,7 +6,6 @@ import { useLocation } from "react-router-dom";
 import { today, next, previous } from "../utils/date-time";
 import { useHistory } from "react-router-dom";
 
-
 /**
  * Defines the dashboard page.
  * @param date
@@ -33,6 +32,7 @@ function Dashboard({ date }) {
     useQueryString().get("date") || date
   );
 
+  // Update search parameters based on search date change
   useEffect(() => {
     const params = new URLSearchParams();
     if (searchDate) {
@@ -43,22 +43,25 @@ function Dashboard({ date }) {
     history.push({ search: params.toString() });
   }, [searchDate, history]);
 
+  // Update table information based on finishing change
   useEffect(() => {
-    console.log("finishingUseEffect");
     loadTables();
   }, [finishing]);
 
-  // https://css-tricks.com/snippets/css/a-guide-to-flexbox/
-
+  // Update reservations on new search date or finishing change
   useEffect(loadReservations, [searchDate, finishing]);
 
-  // TODO: CAN USE LINK here
+  // Set search date to previous day
   function datePrev() {
     setSearchDate(previous(searchDate));
   }
+
+  // Set search date to today
   function dateToday() {
     setSearchDate(today());
   }
+
+  // Set search date to next day
   function dateNext() {
     setSearchDate(next(searchDate));
   }
@@ -76,26 +79,20 @@ function Dashboard({ date }) {
 
   // User confirmed the table is to be cleared
   function onConfirm(table_id, reservation_id) {
-    console.log("confirm tableid=", table_id);
     clearTable(table_id).then(() => setFinishing(0));
   }
 
-  // User said not to clear the table, do nothing.
-  function onNotConfirmed() {
-    console.log("Not confirmed");
-    setFinishing(0);
-  }
-
+  // Load a list of all tables from the database
   function loadTables() {
     const abortController = new AbortController();
     setTablesError(null);
-    console.log("Load Tables");
     listTables({}, abortController.signal)
       .then(setTables)
       .catch(setTablesError);
     return () => abortController.abort();
   }
 
+  // Load the reservations based on a given search date
   function loadReservations() {
     const abortController = new AbortController();
     setReservationsError(null);
@@ -106,6 +103,7 @@ function Dashboard({ date }) {
     return () => abortController.abort();
   }
 
+  // Show the navigation buttons for reservations
   function ReservationNav() {
     return (
       <div>
@@ -147,36 +145,9 @@ function Dashboard({ date }) {
     );
   }
 
-
+  // Display a finish button next to tables that have a seated reservations
   function TableButtons({ reservation_id, table_id }) {
-    if (false) {
-      if (table_id === finishing) {
-        return (
-          <div>
-            <button
-              type="button"
-              data-table-id-confirm={table_id}
-              className="btn btn-secondary"
-              title="Ok"
-              onClick={(e) => onConfirm(table_id, reservation_id)}
-            >
-              <span>Ok</span>
-            </button>
-            <span> </span>
-            <button
-              type="button"
-              data-table-id-cancel={table_id}
-              className="btn btn-secondary"
-              title="Cancel"
-              onClick={(e) => onNotConfirmed()}
-            >
-              <span>Cancel</span>
-            </button>
-          </div>
-        );
-      }
-      return null;
-    } else if (reservation_id) {
+    if (reservation_id) {
       return (
         <button
           type="button"
@@ -193,7 +164,7 @@ function Dashboard({ date }) {
     }
   }
 
-
+  // Display a list of all tables and appropriate action buttons
   function TableList({ tables, finishing }) {
     const rows = tables.map(
       ({ table_id, table_name, capacity, reservation_id }, index) => (
@@ -240,7 +211,10 @@ function Dashboard({ date }) {
       <ErrorAlert error={reservationsError} />
       <ErrorAlert error={tablesError} />
       <ReservationNav />
-      <ReservationList reservations={reservations} updateCallback={loadReservations} />
+      <ReservationList
+        reservations={reservations}
+        updateCallback={loadReservations}
+      />
       <hr />
       <TableList tables={tables} finishing={finishing} />
     </main>

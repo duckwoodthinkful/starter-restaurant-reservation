@@ -61,7 +61,6 @@ async function fetchJson(url, options, onCancel) {
 export async function listReservations(params, signal) {
   const url = new URL(`${API_BASE_URL}/reservations`);
 
-  // console.log("params = ", params);
   Object.entries(params).forEach(([key, value]) =>
     url.searchParams.append(key, value.toString())
   );
@@ -86,7 +85,6 @@ export async function createReservation(reservation, signal) {
 export async function listTables(params, signal) {
   const url = new URL(`${API_BASE_URL}/tables`);
 
-  // console.log("tableparams = ", params);
   Object.entries(params).forEach(([key, value]) =>
     url.searchParams.append(key, value.toString())
   );
@@ -107,7 +105,6 @@ export async function createTable(table, signal) {
 
 // Seats a reservation
 export async function createSeat(seat, signal) {
-  // console.log ("createSeat - ", seat);
   const url = new URL(`${API_BASE_URL}/tables/${seat.table_id}/seat`);
   const options = {
     method: "PUT",
@@ -169,7 +166,6 @@ export async function clearTable(table_id, signal) {
 export async function findReservationsByMobileNumber(params, signal) {
   const url = new URL(`${API_BASE_URL}/reservations`);
 
-  // console.log("params = ", params);
   Object.entries(params).forEach(([key, value]) =>
     url.searchParams.append(key, value.toString())
   );

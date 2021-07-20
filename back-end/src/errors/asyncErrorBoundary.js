@@ -1,3 +1,4 @@
+// Handle boundary condition errors
 function asyncErrorBoundary(delegate, defaultStatus) {
     return (request, response, next) => {
       Promise.resolve()

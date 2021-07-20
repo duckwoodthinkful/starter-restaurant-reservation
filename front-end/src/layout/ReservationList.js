@@ -2,17 +2,12 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { updateReservationStatus } from "../utils/api";
 
-
-
-
+// Display reservation list given a set of reservations
+// updateCallback is used to update the DOM based on a change in the reservation status
 function ReservationList({ reservations, updateCallback }) {
   const [finishing, setFinishing] = useState(0);
 
-  useEffect(() => {
-    console.log("finishingUseEffect");
-  }, [finishing]);
-
-
+  useEffect(() => {}, [finishing]);
 
   // Show a confirmation to user to make sure they actually want to clear a table
   function cancelReservation(reservation_id) {
@@ -27,12 +22,13 @@ function ReservationList({ reservations, updateCallback }) {
 
   // User confirmed the reservation is to be cancelled
   function onConfirm(reservation_id) {
-    console.log("confirm cancel reservation_id=", reservation_id);
-    // cancelReservation(reservation_id).then(() => setFinishing(0));
-    updateReservationStatus({reservation_id: reservation_id, status: "cancelled"}).then(()=>updateCallback());
+    updateReservationStatus({
+      reservation_id: reservation_id,
+      status: "cancelled",
+    }).then(() => updateCallback());
   }
 
-
+  // Map the reservations to an array for display
   const rows = reservations.map(
     (
       {
@@ -51,17 +47,18 @@ function ReservationList({ reservations, updateCallback }) {
         <td>{reservation_date}</td>
         <td>{people}</td>
         <ReservationStatus status={status} reservation_id={reservation_id} />
-          <td>
-          {status!=="cancelled" && (<button
-          type="button"
-          data-reservation-id-cancel={reservation_id}
-          className="btn btn-secondary"
-          title="Cancel Reservation"
-          onClick={(e) => cancelReservation(reservation_id)}
-        >
-          <span>Cancel</span>
-        </button>
-)}
+        <td>
+          {status !== "cancelled" && (
+            <button
+              type="button"
+              data-reservation-id-cancel={reservation_id}
+              className="btn btn-secondary"
+              title="Cancel Reservation"
+              onClick={(e) => cancelReservation(reservation_id)}
+            >
+              <span>Cancel</span>
+            </button>
+          )}
         </td>
       </tr>
     )
@@ -86,13 +83,17 @@ function ReservationList({ reservations, updateCallback }) {
   }
 }
 
+// Show the status of a given reservation
 function ReservationStatus({ status, reservation_id }) {
   if (status === "booked") {
     return (
       <>
         <td data-reservation-id-status={reservation_id}>booked</td>
         <td>
-          <Link to={"/reservations/" + reservation_id + "/seat"}>
+          <Link
+            to={"/reservations/" + reservation_id + "/seat"}
+            href={"/reservations/" + reservation_id + "/seat"}
+          >
             <button
               type="button"
               className="btn btn-secondary"
@@ -103,7 +104,10 @@ function ReservationStatus({ status, reservation_id }) {
           </Link>
         </td>
         <td>
-        <Link to={"/reservations/" + reservation_id + "/edit"} href={"/reservations/" + reservation_id + "/edit"}>
+          <Link
+            to={"/reservations/" + reservation_id + "/edit"}
+            href={"/reservations/" + reservation_id + "/edit"}
+          >
             <button
               type="button"
               className="btn btn-secondary"
@@ -112,7 +116,7 @@ function ReservationStatus({ status, reservation_id }) {
               <span>Edit</span>
             </button>
           </Link>
-          </td>
+        </td>
       </>
     );
   } else if (status === "seated") {

@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import ErrorAlert from "../layout/ErrorAlert";
-import { listTables, createSeat, readReservation, updateReservationStatus } from "../utils/api";
+import {
+  listTables,
+  createSeat,
+  readReservation,
+  updateReservationStatus,
+} from "../utils/api";
 
+// Function to handle seating a reservation at a table
 function NewSeat() {
   const history = useHistory();
   const params = useParams();
@@ -20,6 +26,7 @@ function NewSeat() {
     loadTables();
   }, []);
 
+  // Update the reservation information based on a reservation ID change
   useEffect(() => {
     const abortController = new AbortController();
     setError(null);
@@ -30,6 +37,7 @@ function NewSeat() {
     return () => abortController.abort();
   }, [params.reservationId]);
 
+  // Update the seating information based on a change in the tables
   useEffect(() => {
     if (tables.length > 1)
       setSeat((previousSeat) => ({
@@ -39,6 +47,7 @@ function NewSeat() {
       }));
   }, [tables]);
 
+  // Handle changes to the table seating information
   function changeHandler({ target }) {
     setSeat((previousSeat) => ({
       ...previousSeat,
@@ -48,6 +57,7 @@ function NewSeat() {
     }));
   }
 
+  // validate the form inputs to confirm they are within range
   function validateForm() {
     let message = "";
 
@@ -65,13 +75,19 @@ function NewSeat() {
 
   const [error, setError] = useState(null);
 
+  // Handle the submit button on the form
   function handleSubmit(event) {
     event.preventDefault();
     // Clear any previous errors
     setError(null);
     if (validateForm()) {
       createSeat(seat)
-        .then(updateReservationStatus({reservation_id: seat.reservation_id, status: "seated"}))
+        .then(
+          updateReservationStatus({
+            reservation_id: seat.reservation_id,
+            status: "seated",
+          })
+        )
         .then(() => {
           history.push("/");
         })
@@ -81,6 +97,7 @@ function NewSeat() {
     }
   }
 
+  // Return to the previous page on cancel
   function CancelButton() {
     const history = useHistory();
     return (
@@ -90,6 +107,7 @@ function NewSeat() {
     );
   }
 
+  // Load all of the tables that reside in the restaurant
   function loadTables() {
     const abortController = new AbortController();
     setError(null);
@@ -100,6 +118,7 @@ function NewSeat() {
     return () => abortController.abort();
   }
 
+  // Show a list of tables available in the restaurant
   function TableList({ tables }) {
     const rows = tables.map(({ table_name, capacity, table_id }, index) => (
       <option

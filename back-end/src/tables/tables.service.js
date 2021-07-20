@@ -1,3 +1,4 @@
+// Service module for table handling
 const knex = require("../db/connection");
 
 // List all existing tables
@@ -31,9 +32,8 @@ function create(table) {
     .then((createdRecords) => createdRecords[0]);
 }
 
-// Seat a table
+// Seat a table and update the reservation status in a single transaction
 function seatTable(updatedTable) {
-  // console.log("updatedTable=", updatedTable);
   return knex.transaction(function (trx) {
     knex("tables")
       .update({ reservation_id: updatedTable.reservation_id })
@@ -53,9 +53,8 @@ function seatTable(updatedTable) {
   });
 }
 
-// Clear a table
+// Clear a table and update the reservation status in a single transaction
 function clearTable(clearedTable) {
-  // console.log("in clearTable=", clearedTable);
   return knex.transaction(function (t) {
     knex("tables")
       .update({ reservation_id: null })

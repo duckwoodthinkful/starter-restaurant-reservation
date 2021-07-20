@@ -4,6 +4,7 @@ import { useHistory } from "react-router-dom";
 import { createReservation } from "../utils/api";
 import ErrorAlert from "../layout/ErrorAlert";
 
+// Function for allowing new reservation creation
 function NewReservation() {
   const history = useHistory();
 
@@ -11,27 +12,29 @@ function NewReservation() {
     first_name: "",
     last_name: "",
     mobile_number: "",
-    reservation_date: new Date().toISOString().slice(0,10),
+    reservation_date: new Date().toISOString().slice(0, 10),
     reservation_time: "",
     people: 1,
   });
 
+  // Handle change to reservation input parameters
   function changeHandler({ target: { name, value, type } }) {
-    if (type === "number" )  value = Number(value);
+    if (type === "number") value = Number(value);
     setReservation((previousReservation) => ({
       ...previousReservation,
       [name]: value,
     }));
   }
 
+  // Confirm valid new reservation input values
   function validateForm() {
-    const aReservationDay = new Date(reservation.reservation_date+" "+reservation.reservation_time);
-    // console.log("aReservationDay=", aReservationDay)
+    const aReservationDay = new Date(
+      reservation.reservation_date + " " + reservation.reservation_time
+    );
     const dayWeek = aReservationDay.getDay();
-    // console.log("dayWeek=", dayWeek);
+
     let message = "";
-    if ((Date.parse(aReservationDay) - Date.now()) < 0)
-    {
+    if (Date.parse(aReservationDay) - Date.now() < 0) {
       message += "\nReservation must be in the future.";
     }
 
@@ -39,21 +42,26 @@ function NewReservation() {
       message += "\nRestaurant is closed on Tuesdays.";
     }
 
-    var startBusinessHours = new Date(reservation.reservation_date+" "+reservation.reservation_time);
-    startBusinessHours.setHours(10,30,0); // 10:30 am is when restaraunt opens
-    // console.log("startH=", startBusinessHours);
-    var endBusinessHours = new Date(reservation.reservation_date+" "+reservation.reservation_time);
-    endBusinessHours.setHours(21,30,0); // 9:30 pm latest reservation
-    // console.log("endH=", endBusinessHours);
-    // console.log(aReservationDay);
-    
-    if(!(aReservationDay >= startBusinessHours && aReservationDay < endBusinessHours )){
-      message += "\nReservation must be between 10:30 am and 9:30 pm."
+    var startBusinessHours = new Date(
+      reservation.reservation_date + " " + reservation.reservation_time
+    );
+    startBusinessHours.setHours(10, 30, 0); // 10:30 am is when restaraunt opens
+    var endBusinessHours = new Date(
+      reservation.reservation_date + " " + reservation.reservation_time
+    );
+    endBusinessHours.setHours(21, 30, 0); // 9:30 pm latest reservation
+
+    if (
+      !(
+        aReservationDay >= startBusinessHours &&
+        aReservationDay < endBusinessHours
+      )
+    ) {
+      message += "\nReservation must be between 10:30 am and 9:30 pm.";
     }
 
-    if (message !== "")
-    {
-      setError({message: message});
+    if (message !== "") {
+      setError({ message: message });
       return false;
     }
 
@@ -62,6 +70,7 @@ function NewReservation() {
 
   const [error, setError] = useState(null);
 
+  // Handle form submit button
   function handleSubmit(event) {
     event.preventDefault();
     // Clear any previous errors
@@ -69,8 +78,7 @@ function NewReservation() {
     if (validateForm()) {
       createReservation(reservation)
         .then(() => {
-          console.log ("pushing history - ", reservation.reservation_date);
-          history.push("/dashboard/?date="+reservation.reservation_date);
+          history.push("/dashboard/?date=" + reservation.reservation_date);
         })
         .catch(setError);
     } else {
@@ -78,6 +86,7 @@ function NewReservation() {
     }
   }
 
+  // Handle returning to previous page upon Cancel
   function CancelButton() {
     const history = useHistory();
     return (

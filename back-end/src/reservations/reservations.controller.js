@@ -3,13 +3,8 @@
  */
 const service = require("./reservations.service.js");
 const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
-// const {  formatAsTime,
-//   formatAsDate,
-// } = require("../../../front-end/src/utils/date-time.js");
 
-// Original JavaScript code by Chirp Internet: chirpinternet.eu
-// Please acknowledge use of this code by including this header.
-
+// Check to see if the date format is valid
 function checkDate(date) {
   var allowBlank = true;
   var minYear = 1902;
@@ -46,9 +41,7 @@ function checkDate(date) {
   return errorMsg;
 }
 
-// Original JavaScript code by Chirp Internet: chirpinternet.eu
-// Please acknowledge use of this code by including this header.
-
+// Check to see if the time format is valid
 function checkTime(time) {
   var errorMsg = "";
 
@@ -79,11 +72,10 @@ function checkTime(time) {
   return errorMsg;
 }
 
+// Check to see if the restaurant is open or closed on the requested day
 function checkDayOfWeek(date, time) {
   const aDay = new Date(date + " " + time);
-  // console.log("aDay=", aDay)
   const dayWeek = aDay.getDay();
-  // console.log("dayWeek=", dayWeek);
   let message = "";
   if (Date.parse(aDay) - Date.now() < 0) {
     message += "\nReservation must be in the future.";
@@ -95,9 +87,9 @@ function checkDayOfWeek(date, time) {
   return message;
 }
 
+// Check to see if the time requested is during operating hours
 function checkReservationTime(date, time) {
   const aReservationDay = new Date(date + " " + time);
-  // console.log("aReservationTime=", aReservationDay)
   let message = "";
   var startBusinessHours = new Date(date + " " + time);
   startBusinessHours.setHours(10, 30, 0); // 10:30 am is when restaraunt opens
@@ -116,6 +108,7 @@ function checkReservationTime(date, time) {
   return message;
 }
 
+// Check to see if the body of the request has some actual data
 function hasData(req, res, next) {
   if (req.body.data) {
     return next();
@@ -123,6 +116,7 @@ function hasData(req, res, next) {
   next({ status: 400, message: "Body must have data property" });
 }
 
+// Check to see if the data includes a First Name
 function hasFirstName(req, res, next) {
   const first_name = req.body.data.first_name;
   if (first_name) {
@@ -131,6 +125,7 @@ function hasFirstName(req, res, next) {
   next({ status: 400, message: "first_name is required" });
 }
 
+// Check to see if the data includes a Last Name
 function hasLastName(req, res, next) {
   const last_name = req.body.data.last_name;
   if (last_name) {
@@ -139,12 +134,11 @@ function hasLastName(req, res, next) {
   next({ status: 400, message: "last_name is required" });
 }
 
+// Check to see if the data includes a Reservation Date
 function hasReservationDate(req, res, next) {
   const reservation_date = req.body.data.reservation_date;
   let message = "reservation_date is required";
   if (reservation_date) {
-    // console.log("rd=", reservation_date);
-    // console.log("check=", checkDate(reservation_date));
     message = checkDate(reservation_date);
     if (message === "") {
       return next();
@@ -153,12 +147,11 @@ function hasReservationDate(req, res, next) {
   next({ status: 400, message: message });
 }
 
+// Check to see if the data includes a Reservation Time
 function hasReservationTime(req, res, next) {
   const reservation_time = req.body.data.reservation_time;
   let message = "reservation_time is required";
   if (reservation_time) {
-    // console.log("rt=", reservation_time);
-    // console.log("checkt=", checkDate(reservation_time));
     message = checkTime(reservation_time);
     if (message === "") {
       return next();
@@ -187,13 +180,9 @@ function validReservationTime(req, res, next) {
   next({ status: 400, message: message });
 }
 
-function isNumeric(value) {
-  return /^-?\d+$/.test(value);
-}
-
+// Check to see if the data includes a the number of people
 function hasPeople(req, res, next) {
   const people = req.body.data.people;
-  // console.log("people = ", people);
   if (typeof people == "number") {
     if (people >= 1) {
       return next();
@@ -202,6 +191,7 @@ function hasPeople(req, res, next) {
   next({ status: 400, message: "people is required" });
 }
 
+// Check to see if the data includes an invalid status
 function invalidStatus(req, res, next) {
   const status = req.body.data.status;
 
@@ -214,11 +204,17 @@ function invalidStatus(req, res, next) {
   next({ status: 400, message: `status ${status} is invalid` });
 }
 
+// Check to see if the data includes a valid status
 function validStatus(req, res, next) {
   const status = req.body.data.status;
 
   if (res.locals.reservations.status)
-    if (status === "booked" || status === "seated" || status === "finished" || status === "cancelled")
+    if (
+      status === "booked" ||
+      status === "seated" ||
+      status === "finished" ||
+      status === "cancelled"
+    )
       return next();
 
   next({
@@ -227,12 +223,14 @@ function validStatus(req, res, next) {
   });
 }
 
+// Check to see if the status of the reservation is already finished, which means no changes can be made
 function statusNotFinished(req, res, next) {
   if (res.locals.reservations.status !== "finished") return next();
 
   next({ status: 400, message: `a finished reservation cannot be updated` });
 }
 
+// Check to see if the data includes a Mobile Number
 function hasMobileNumber(req, res, next) {
   const mobile_number = req.body.data.mobile_number;
   if (mobile_number) {
@@ -241,20 +239,18 @@ function hasMobileNumber(req, res, next) {
   next({ status: 400, message: "mobile_number is required" });
 }
 
+// Check to see if Reservation exists for some given information, either date or mobile number
 async function reservationExists(req, res, next) {
   const { date, mobile_number } = req.query;
 
   if (date) {
-    // console.log("date =", date);
     const reservations = await service.read(date);
-    // console.log("reservations =", reservations);
     if (reservations) {
       res.locals.reservations = reservations;
       return next();
     }
   } else if (mobile_number) {
     const reservations = await service.readByMobile(mobile_number);
-    console.log("mobile number reservations =", reservations);
     if (reservations) {
       res.locals.reservations = reservations;
       return next();
@@ -263,10 +259,10 @@ async function reservationExists(req, res, next) {
   return next({ status: 404, message: `No reservations found for that date.` });
 }
 
+// Check to see if a specific reservation ID exists
 async function reservationIdExists(req, res, next) {
   const { reservationId } = req.params;
   const reservations = await service.readById(reservationId);
-  // console.log("reservations =", reservations);
   if (reservations) {
     res.locals.reservations = reservations;
     return next();
@@ -277,14 +273,13 @@ async function reservationIdExists(req, res, next) {
   });
 }
 
+// List all of the reservations
 async function list(req, res, next) {
   res.json({ data: await service.list() });
 }
 
+// Read a specific reservation
 async function read(req, res, next) {
-  // const knexInstance = req.app.get("db");
-  const { reservations } = res.locals;
-  // console.log("reservations = ", reservations);
   res.status(200).json({ data: res.locals.reservations });
 }
 
@@ -296,14 +291,10 @@ async function create(req, res) {
 
 // Update an existing reservation
 async function update(req, res) {
-  // console.log("updatebodydata = ", req.body.data);
-  // console.log("locals = ", res.locals.reservations);
-
   const updatedReservation = {
     ...res.locals.reservations,
     ...req.body.data,
   };
-  // console.log("updatedReservationinupdate = ", updatedReservation);
 
   const data = await service.update(updatedReservation);
 

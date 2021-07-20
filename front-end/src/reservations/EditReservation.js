@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
-// import { today } from "../utils/date-time";
 import { readReservation, updateReservation } from "../utils/api";
 
 import ErrorAlert from "../layout/ErrorAlert";
 
+// Function for allowing reservation changes
 function EditReservation() {
   const history = useHistory();
   const params = useParams();
@@ -13,12 +13,12 @@ function EditReservation() {
     first_name: "",
     last_name: "",
     mobile_number: "",
-    reservation_date: new Date().toISOString().slice(0,10),
+    reservation_date: new Date().toISOString().slice(0, 10),
     reservation_time: "",
     people: 1,
   });
 
-
+  // Update reservation information based on a change to the reservation ID parameter
   useEffect(() => {
     const abortController = new AbortController();
     setError(null);
@@ -29,22 +29,23 @@ function EditReservation() {
     return () => abortController.abort();
   }, [params.reservationId]);
 
+  // Change value of specific reservation parameters
   function changeHandler({ target: { name, value, type } }) {
-    if (type === "number" )  value = Number(value);
+    if (type === "number") value = Number(value);
     setReservation((previousReservation) => ({
       ...previousReservation,
       [name]: value,
     }));
   }
 
+  // Validate the reservation inputs and show messages for invalid values
   function validateForm() {
-    const aReservationDay = new Date(reservation.reservation_date+" "+reservation.reservation_time);
-    // console.log("aReservationDay=", aReservationDay)
+    const aReservationDay = new Date(
+      reservation.reservation_date + " " + reservation.reservation_time
+    );
     const dayWeek = aReservationDay.getDay();
-    // console.log("dayWeek=", dayWeek);
     let message = "";
-    if ((Date.parse(aReservationDay) - Date.now()) < 0)
-    {
+    if (Date.parse(aReservationDay) - Date.now() < 0) {
       message += "\nReservation must be in the future.";
     }
 
@@ -52,21 +53,26 @@ function EditReservation() {
       message += "\nRestaurant is closed on Tuesdays.";
     }
 
-    var startBusinessHours = new Date(reservation.reservation_date+" "+reservation.reservation_time);
-    startBusinessHours.setHours(10,30,0); // 10:30 am is when restaraunt opens
-    // console.log("startH=", startBusinessHours);
-    var endBusinessHours = new Date(reservation.reservation_date+" "+reservation.reservation_time);
-    endBusinessHours.setHours(21,30,0); // 9:30 pm latest reservation
-    // console.log("endH=", endBusinessHours);
-    // console.log(aReservationDay);
-    
-    if(!(aReservationDay >= startBusinessHours && aReservationDay < endBusinessHours )){
-      message += "\nReservation must be between 10:30 am and 9:30 pm."
+    var startBusinessHours = new Date(
+      reservation.reservation_date + " " + reservation.reservation_time
+    );
+    startBusinessHours.setHours(10, 30, 0); // 10:30 am is when restaraunt opens
+    var endBusinessHours = new Date(
+      reservation.reservation_date + " " + reservation.reservation_time
+    );
+    endBusinessHours.setHours(21, 30, 0); // 9:30 pm latest reservation
+
+    if (
+      !(
+        aReservationDay >= startBusinessHours &&
+        aReservationDay < endBusinessHours
+      )
+    ) {
+      message += "\nReservation must be between 10:30 am and 9:30 pm.";
     }
 
-    if (message !== "")
-    {
-      setError({message: message});
+    if (message !== "") {
+      setError({ message: message });
       return false;
     }
 
@@ -75,6 +81,7 @@ function EditReservation() {
 
   const [error, setError] = useState(null);
 
+  // Handle the submit button on the form
   function handleSubmit(event) {
     event.preventDefault();
     // Clear any previous errors
@@ -82,8 +89,7 @@ function EditReservation() {
     if (validateForm()) {
       updateReservation(reservation)
         .then(() => {
-          console.log ("pushing history - ", reservation.reservation_date);
-          history.push("/dashboard/?date="+reservation.reservation_date);
+          history.push("/dashboard/?date=" + reservation.reservation_date);
         })
         .catch(setError);
     } else {
@@ -91,6 +97,7 @@ function EditReservation() {
     }
   }
 
+  // Handle going back to the previous page upon Cancel being clicked
   function CancelButton() {
     const history = useHistory();
     return (
